@@ -27,7 +27,7 @@
                     class="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
             </div>
 
-            <button onclick="handleLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+            <button onclick="handleLogin()" id="login-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95">
                 ACCESS DASHBOARD
             </button>
             
@@ -36,25 +36,50 @@
     </div>
 
     <script>
-        // THIS IS THE REDIRECT LOGIC
-        // Later, we can connect this to your Google Sheet "Auth" tab
-        async function handleLogin() {
-            const mc = document.getElementById('mc-input').value;
-            const code = document.getElementById('code-input').value;
-            const error = document.getElementById('error-msg');
+        // PASTE YOUR AUTH CSV URL BELOW
+        const AUTH_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnl61PSkJxzyj_K3WkeFVFzvuzAzRCf3yoEG7FVt2rCyx8OJQrya-tbVfOi5hiOHmE0suQXvxz_MOD/pub?gid=960355181&single=true&output=csv";
 
-            // For now, we use a simple check. 
-            // We will upgrade this to fetch your "Auth Sheet" next.
-            if(mc && code) {
-                // Save the MC to 'session storage' so the dashboard knows who logged in
-                sessionStorage.setItem('currentMC', mc);
-                
-                // Redirect to the Dashboard page
-                window.location.href = 'dashboard.html';
-            } else {
+        async function handleLogin() {
+            const mcInput = document.getElementById('mc-input').value.trim();
+            const codeInput = document.getElementById('code-input').value.trim();
+            const error = document.getElementById('error-msg');
+            const btn = document.getElementById('login-btn');
+
+            if (!mcInput || !codeInput) {
+                error.textContent = "Please fill in both fields.";
                 error.classList.remove('hidden');
+                return;
+            }
+
+            btn.textContent = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(AUTH_SHEET_URL);
+                const csvData = await response.text();
+                
+                // Parse CSV rows
+                const rows = csvData.split('\n').map(row => row.split(',').map(cell => cell.trim().replace(/"/g, '')));
+
+                // Check if MC (Column 0) and Code (Column 1) match
+                const user = rows.find(r => r[0] === mcInput && r[1] === codeInput);
+
+                if (user) {
+                    sessionStorage.setItem('currentMC', mcInput);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    error.textContent = "Invalid MC or Access Code.";
+                    error.classList.remove('hidden');
+                    btn.textContent = "ACCESS DASHBOARD";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Connection Error. Make sure your Sheet is 'Published to Web' as CSV.");
+                btn.textContent = "ACCESS DASHBOARD";
+                btn.disabled = false;
             }
         }
     </script>
 </body>
-</html>
+</html>    
