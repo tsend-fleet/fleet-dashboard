@@ -3,115 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fleet Analytics</title>
+    <title>Fleet Intelligence Command</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .active-card { border-color: #3b82f6 !important; background-color: #1e293b !important; transform: translateY(-4px); }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
 
-    <nav class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
+    <nav class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-2xl">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 id="mc-display" class="text-lg font-black text-blue-500 font-mono tracking-tighter uppercase">MC: --</h1>
-            <button onclick="logout()" class="text-[10px] bg-slate-700 hover:bg-red-600 px-3 py-2 rounded-lg font-bold uppercase tracking-widest transition-all">Logout</button>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-black">F</div>
+                <h1 id="mc-display" class="text-sm font-bold tracking-widest text-slate-300 uppercase">MC: --</h1>
+            </div>
+            <button onclick="logout()" class="text-[10px] bg-slate-700 hover:bg-red-900 px-4 py-2 rounded-lg font-bold transition-all uppercase tracking-widest">Logout</button>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Total Monthly Spend</p>
-                <h3 id="stat-spend" class="text-3xl font-black mt-1">$0.00</h3>
+    <main class="max-w-7xl mx-auto px-4 mt-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Total Revenue</p>
+                <h3 id="global-revenue" class="text-2xl font-black text-blue-400">$0.00</h3>
             </div>
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fleet Efficiency (CPM)</p>
-                <h3 id="stat-cpm" class="text-3xl font-black mt-1 text-green-400">$0.00</h3>
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Total Expenses</p>
+                <h3 id="global-expense" class="text-2xl font-black text-red-400">$0.00</h3>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Net Profit</p>
+                <h3 id="global-profit" class="text-2xl font-black text-green-400">$0.00</h3>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 border-l-4 border-l-blue-500">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Company CPM</p>
+                <h3 id="global-cpm" class="text-2xl font-black">$0.00</h3>
             </div>
         </div>
 
-        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl mb-8">
-            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-6">Weekly CPM Performance</p>
-            <div class="h-64"><canvas id="mainChart"></canvas></div>
+        <div class="mb-6 flex justify-between items-end">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Fleet Units</h2>
+            <p class="text-[10px] text-slate-600">Select a truck to filter analytics</p>
+        </div>
+        <div id="truck-grid" class="flex gap-4 overflow-x-auto pb-6 custom-scroll">
+            <p class="text-slate-600 animate-pulse">Scanning Fleet Data...</p>
         </div>
 
-        <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <tbody id="data-rows" class="text-sm divide-y divide-slate-700/50">
-                        <tr><td class="p-10 text-center text-slate-500">Retrieving Fleet Stream...</td></tr>
-                    </tbody>
-                </table>
+        <div id="deep-dive" class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 opacity-0 transition-opacity duration-500">
+            
+            <div class="lg:col-span-2 bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="chart-title" class="font-bold text-slate-300 uppercase tracking-widest text-xs">Truck Performance</h2>
+                    <div id="truck-status-tag" class="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-[10px] font-bold uppercase">Active</div>
+                </div>
+                <div class="h-80"><canvas id="detailChart"></canvas></div>
             </div>
+
+            <div class="bg-slate-800 rounded-3xl border border-slate-700 shadow-xl overflow-hidden">
+                <div class="p-6 bg-slate-800/50 border-b border-slate-700">
+                    <h2 class="font-bold text-slate-300 uppercase tracking-widest text-xs">Expense Breakdown</h2>
+                </div>
+                <div class="overflow-y-auto max-h-[400px]">
+                    <table class="w-full text-left">
+                        <tbody id="detail-table-body" class="text-xs divide-y divide-slate-700/50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
     <script>
-        // DYNAMIC LINK RETRIEVAL
         const FLEET_LINK = sessionStorage.getItem('clientDataUrl');
         const MC_NUMBER = sessionStorage.getItem('currentMC');
+        let rawData = [];
+        let fleetChart = null;
 
         if (!FLEET_LINK) { window.location.href = 'index.html'; }
-        document.getElementById('mc-display').textContent = "MC: " + MC_NUMBER;
+        document.getElementById('mc-display').textContent = `MC: ${MC_NUMBER}`;
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
-        async function loadData() {
+        async function init() {
             try {
                 const response = await fetch(FLEET_LINK);
                 const text = await response.text();
-                const rows = text.split('\n').map(r => r.split(',').map(c => c.trim().replace(/"/g, '')));
-                
-                render(rows);
-            } catch (e) { document.getElementById('data-rows').innerHTML = "Connection Error."; }
+                // Parse CSV rows into objects
+                rawData = text.split('\n').map(r => r.split(',').map(c => c.trim().replace(/"/g, '')));
+                processFleet(rawData);
+            } catch (e) { console.error("Load failed", e); }
         }
 
-        function render(rows) {
-            const container = document.getElementById('data-rows');
-            container.innerHTML = '';
-            let chartPoints = [0,0,0,0];
+        function processFleet(rows) {
+            const truckGrid = document.getElementById('truck-grid');
+            truckGrid.innerHTML = '';
+            
+            let globalRev = 0, globalExp = 0, globalMiles = 0;
+            let trucks = {};
+
+            // We iterate through the sheet to group data by Truck ID
+            // Assuming your script layout: Truck ID is in a "TRUCK #:" label row
+            let currentTruckId = null;
 
             rows.forEach(row => {
-                if (!row[0]) return;
-                
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-750 transition-colors";
-                
-                // Color coding rows based on your Script labels
-                if (row[0].includes("TRUCK #:")) tr.className = "bg-blue-900/10 text-blue-400 font-bold uppercase text-xs";
-                if (row[0] === "OVERALL EXPENSE") {
-                    document.getElementById('stat-spend').textContent = row[7];
-                    tr.className = "bg-slate-700/50 font-bold";
+                if(row[0].includes("TRUCK #:")) {
+                    currentTruckId = row[0].replace("TRUCK #: ", "");
+                    trucks[currentTruckId] = { id: currentTruckId, revenue: 0, expense: 0, miles: 0, cpm: 0, data: [] };
                 }
-                if (row[0] === "FINAL CPM") {
-                    document.getElementById('stat-cpm').textContent = row[7];
-                    chartPoints = [parseFloat(row[1])||0, parseFloat(row[2])||0, parseFloat(row[3])||0, parseFloat(row[4])||0];
-                    tr.className = "bg-green-900/10 text-green-400 font-bold";
+                
+                if(currentTruckId) {
+                    trucks[currentTruckId].data.push(row);
+                    if(row[0] === "TOTAL MILEAGE") trucks[currentTruckId].miles = parseFloat(row[7]) || 0;
+                    if(row[0] === "OVERALL EXPENSE") trucks[currentTruckId].expense = parseFloat(row[7].replace(/[^0-9.-]+/g,"")) || 0;
+                    if(row[0] === "FINAL CPM") trucks[currentTruckId].cpm = row[7];
+                    if(row[0] === "Revenue") trucks[currentTruckId].revenue = parseFloat(row[7].replace(/[^0-9.-]+/g,"")) || 0;
                 }
-
-                row.forEach(cell => {
-                    const td = document.createElement('td');
-                    td.className = "p-4 border-b border-slate-700/30";
-                    td.textContent = cell;
-                    tr.appendChild(td);
-                });
-                container.appendChild(tr);
             });
 
-            new Chart(document.getElementById('mainChart'), {
+            // Calculate Global Totals
+            Object.values(trucks).forEach(t => {
+                globalRev += t.revenue;
+                globalExp += t.expense;
+                globalMiles += t.miles;
+            });
+
+            document.getElementById('global-revenue').textContent = `$${globalRev.toLocaleString()}`;
+            document.getElementById('global-expense').textContent = `$${globalExp.toLocaleString()}`;
+            document.getElementById('global-profit').textContent = `$${(globalRev - globalExp).toLocaleString()}`;
+            document.getElementById('global-cpm').textContent = globalMiles > 0 ? `$${(globalExp / globalMiles).toFixed(2)}` : "$0.00";
+
+            // Build Cards
+            Object.values(trucks).forEach(t => {
+                const card = document.createElement('div');
+                card.className = "min-w-[200px] bg-slate-800 p-5 rounded-2xl border border-slate-700 cursor-pointer transition-all hover:bg-slate-750 flex-shrink-0";
+                card.innerHTML = `
+                    <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Unit</p>
+                    <h4 class="text-xl font-black mb-3">#${t.id}</h4>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px]"><span class="text-slate-500">CPM:</span><span class="text-green-400 font-bold">${t.cpm}</span></div>
+                        <div class="flex justify-between text-[10px]"><span class="text-slate-500">Miles:</span><span>${t.miles.toLocaleString()}</span></div>
+                    </div>
+                `;
+                card.onclick = () => selectTruck(t, card);
+                truckGrid.appendChild(card);
+            });
+        }
+
+        function selectTruck(truck, cardElement) {
+            document.querySelectorAll('#truck-grid div').forEach(c => c.classList.remove('active-card'));
+            cardElement.classList.add('active-card');
+            
+            document.getElementById('deep-dive').style.opacity = '1';
+            document.getElementById('chart-title').textContent = `Performance: Truck #${truck.id}`;
+            
+            // Build Detail Table
+            const tbody = document.getElementById('detail-table-body');
+            tbody.innerHTML = '';
+            let chartData = [0,0,0,0];
+
+            truck.data.forEach(row => {
+                if(row[0].includes("TRUCK #:") || row[0] === "") return;
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-700/50";
+                
+                if(row[0] === "FINAL CPM") chartData = [parseFloat(row[1])||0, parseFloat(row[2])||0, parseFloat(row[3])||0, parseFloat(row[4])||0];
+
+                row.forEach((cell, i) => {
+                    if(i === 0 || i === 7) { // Only show Label and Total
+                        const td = document.createElement('td');
+                        td.className = "p-4 border-slate-700";
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    }
+                });
+                tbody.appendChild(tr);
+            });
+
+            renderChart(chartData);
+        }
+
+        function renderChart(points) {
+            const ctx = document.getElementById('detailChart').getContext('2d');
+            if(fleetChart) fleetChart.destroy();
+            
+            fleetChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['W1', 'W2', 'W3', 'W4'],
                     datasets: [{
-                        data: chartPoints,
+                        data: points,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        borderWidth: 4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#3b82f6'
                     }]
                 },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+                    }
+                }
             });
         }
-        loadData();
+
+        init();
     </script>
 </body>
 </html>
