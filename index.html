@@ -6,38 +6,38 @@
     <title>Fleet Service Portal | Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 flex items-center justify-center min-h-screen">
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-md p-8 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-black text-blue-500 tracking-tighter">FLEET SERVICE</h1>
-            <p class="text-slate-400 text-sm mt-2">Enter credentials to access fleet intelligence</p>
+            <p class="text-slate-400 text-sm mt-2 font-medium">Global Access Portal</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">MC Number</label>
-                <input type="text" id="mc-input" placeholder="e.g. 123456" 
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">MC Number</label>
+                <input type="text" id="mc-input" placeholder="Enter MC" 
                     class="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
             </div>
             
             <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Access Code</label>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">Access Code</label>
                 <input type="password" id="code-input" placeholder="••••" 
                     class="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
             </div>
 
-            <button onclick="handleLogin()" id="login-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95">
-                ACCESS DASHBOARD
+            <button onclick="handleLogin()" id="login-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 uppercase tracking-widest text-xs">
+                Access Dashboard
             </button>
             
-            <p id="error-msg" class="text-red-400 text-center text-sm hidden">Invalid MC or Access Code. Please try again.</p>
+            <p id="error-msg" class="text-red-400 text-center text-sm hidden font-medium">Invalid MC or Access Code.</p>
         </div>
     </div>
 
     <script>
-        // PASTE YOUR AUTH CSV URL BELOW
-        const AUTH_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnl61PSkJxzyj_K3WkeFVFzvuzAzRCf3yoEG7FVt2rCyx8OJQrya-tbVfOi5hiOHmE0suQXvxz_MOD/pub?gid=960355181&single=true&output=csv";
+        // 1. PASTE YOUR MAINPAGE CODES (AUTH) CSV URL BELOW
+        const MASTER_AUTH_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQnl61PSkJxzyj_K3WkeFVFzvuzAzRCf3yoEG7FVt2rCyx8OJQrya-tbVfOi5hiOHmE0suQXvxz_MOD/pub?gid=960355181&single=true&output=csv";
 
         async function handleLogin() {
             const mcInput = document.getElementById('mc-input').value.trim();
@@ -46,40 +46,42 @@
             const btn = document.getElementById('login-btn');
 
             if (!mcInput || !codeInput) {
-                error.textContent = "Please fill in both fields.";
+                error.textContent = "Please enter both credentials.";
                 error.classList.remove('hidden');
                 return;
             }
 
-            btn.textContent = "Verifying...";
+            btn.textContent = "VERIFYING...";
             btn.disabled = true;
 
             try {
-                const response = await fetch(AUTH_SHEET_URL);
+                const response = await fetch(MASTER_AUTH_URL);
                 const csvData = await response.text();
                 
-                // Parse CSV rows
+                // Parse CSV (Split by lines, then by commas)
                 const rows = csvData.split('\n').map(row => row.split(',').map(cell => cell.trim().replace(/"/g, '')));
 
-                // Check if MC (Column 0) and Code (Column 1) match
+                // FIND MATCH: MC (Col 0), CODE (Col 1), CLIENT CSV URL (Col 2)
                 const user = rows.find(r => r[0] === mcInput && r[1] === codeInput);
 
-                if (user) {
+                if (user && user[2]) {
+                    // Save specific client data to session storage
                     sessionStorage.setItem('currentMC', mcInput);
+                    sessionStorage.setItem('clientDataUrl', user[2]); 
+                    
                     window.location.href = 'dashboard.html';
                 } else {
-                    error.textContent = "Invalid MC or Access Code.";
+                    error.textContent = "Access Denied: Check MC or Code.";
                     error.classList.remove('hidden');
                     btn.textContent = "ACCESS DASHBOARD";
                     btn.disabled = false;
                 }
             } catch (err) {
-                console.error(err);
-                alert("Connection Error. Make sure your Sheet is 'Published to Web' as CSV.");
-                btn.textContent = "ACCESS DASHBOARD";
+                error.textContent = "System Connection Error.";
+                error.classList.remove('hidden');
                 btn.disabled = false;
             }
         }
     </script>
 </body>
-</html>    
+</html>
