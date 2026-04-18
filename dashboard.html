@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <nav class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 id="mc-display" class="text-lg font-black text-blue-500 font-mono tracking-tighter uppercase">MC: --</h1>
+            <button onclick="logout()" class="text-[10px] bg-slate-700 hover:bg-red-600 px-3 py-2 rounded-lg font-bold uppercase tracking-widest transition-all">Logout</button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Total Monthly Spend</p>
+                <h3 id="stat-spend" class="text-3xl font-black mt-1">$0.00</h3>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Fleet Efficiency (CPM)</p>
+                <h3 id="stat-cpm" class="text-3xl font-black mt-1 text-green-400">$0.00</h3>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl mb-8">
+            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-6">Weekly CPM Performance</p>
+            <div class="h-64"><canvas id="mainChart"></canvas></div>
+        </div>
+
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <tbody id="data-rows" class="text-sm divide-y divide-slate-700/50">
+                        <tr><td class="p-10 text-center text-slate-500">Retrieving Fleet Stream...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DYNAMIC LINK RETRIEVAL
+        const FLEET_LINK = sessionStorage.getItem('clientDataUrl');
+        const MC_NUMBER = sessionStorage.getItem('currentMC');
+
+        if (!FLEET_LINK) { window.location.href = 'index.html'; }
+        document.getElementById('mc-display').textContent = "MC: " + MC_NUMBER;
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function loadData() {
+            try {
+                const response = await fetch(FLEET_LINK);
+                const text = await response.text();
+                const rows = text.split('\n').map(r => r.split(',').map(c => c.trim().replace(/"/g, '')));
+                
+                render(rows);
+            } catch (e) { document.getElementById('data-rows').innerHTML = "Connection Error."; }
+        }
+
+        function render(rows) {
+            const container = document.getElementById('data-rows');
+            container.innerHTML = '';
+            let chartPoints = [0,0,0,0];
+
+            rows.forEach(row => {
+                if (!row[0]) return;
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-750 transition-colors";
+                
+                // Color coding rows based on your Script labels
+                if (row[0].includes("TRUCK #:")) tr.className = "bg-blue-900/10 text-blue-400 font-bold uppercase text-xs";
+                if (row[0] === "OVERALL EXPENSE") {
+                    document.getElementById('stat-spend').textContent = row[7];
+                    tr.className = "bg-slate-700/50 font-bold";
+                }
+                if (row[0] === "FINAL CPM") {
+                    document.getElementById('stat-cpm').textContent = row[7];
+                    chartPoints = [parseFloat(row[1])||0, parseFloat(row[2])||0, parseFloat(row[3])||0, parseFloat(row[4])||0];
+                    tr.className = "bg-green-900/10 text-green-400 font-bold";
+                }
+
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = "p-4 border-b border-slate-700/30";
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                container.appendChild(tr);
+            });
+
+            new Chart(document.getElementById('mainChart'), {
+                type: 'line',
+                data: {
+                    labels: ['W1', 'W2', 'W3', 'W4'],
+                    datasets: [{
+                        data: chartPoints,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+        loadData();
+    </script>
+</body>
+</html>
