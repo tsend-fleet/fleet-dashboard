@@ -1,1 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Service Portal | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen">
 
+    <div class="w-full max-w-md p-8 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-blue-500 tracking-tighter">FLEET SERVICE</h1>
+            <p class="text-slate-400 text-sm mt-2">Enter credentials to access fleet intelligence</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">MC Number</label>
+                <input type="text" id="mc-input" placeholder="e.g. 123456" 
+                    class="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Access Code</label>
+                <input type="password" id="code-input" placeholder="••••" 
+                    class="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+
+            <button onclick="handleLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+                ACCESS DASHBOARD
+            </button>
+            
+            <p id="error-msg" class="text-red-400 text-center text-sm hidden">Invalid MC or Access Code. Please try again.</p>
+        </div>
+    </div>
+
+    <script>
+        // THIS IS THE REDIRECT LOGIC
+        // Later, we can connect this to your Google Sheet "Auth" tab
+        async function handleLogin() {
+            const mc = document.getElementById('mc-input').value;
+            const code = document.getElementById('code-input').value;
+            const error = document.getElementById('error-msg');
+
+            // For now, we use a simple check. 
+            // We will upgrade this to fetch your "Auth Sheet" next.
+            if(mc && code) {
+                // Save the MC to 'session storage' so the dashboard knows who logged in
+                sessionStorage.setItem('currentMC', mc);
+                
+                // Redirect to the Dashboard page
+                window.location.href = 'dashboard.html';
+            } else {
+                error.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
